@@ -25,7 +25,7 @@ The queue and bot state remain in the bot machine's `db: cloud` repository.
 Configure the Chat server with `CHAT_BOT_AGENT`, `CHAT_BOT_NAME`,
 `CHAT_BOT_INGRESS_URL` and a secret binding for `CHAT_BOT_SIGNING_SECRET`.
 Configure the bot host with the same signing-secret binding,
-`CHAT_BOT_CALLBACK_URL` pointing to Chat's `/apps/chat/bot-event`,
+`CHAT_BOT_CALLBACK_URL` pointing to Chat's `/api/apps/chat/bot-event`,
 and the configured agent machine. One configured bot is supported per Chat deployment.
 Never supply connection credentials from browser input.
 
