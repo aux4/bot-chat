@@ -37,7 +37,7 @@ export function verify(input, now = Date.now()) {
 export function normalize(input) {
   const m = parseMessage(input.rawBody,input.bot);
   return [{key:m.messageId,kind:'message',chatId:m.conversationId,userId:m.senderId,text:m.text,files:[],ttl:129600,
-    ...(typeof m.senderName==='string' && m.senderName.trim() ? {sender:{displayName:m.senderName.trim().slice(0,200)}} : {}),
+    ...(typeof m.senderName==='string' && m.senderName.trim() ? {sender:{displayName:m.senderName.trim().slice(0,200),id:m.senderId}} : {}),
     delivery:{callbackCapability:m.callbackCapability}}];
 }
 export function format(input) {

@@ -19,7 +19,7 @@ test('authenticates exact bytes, time window and fixed agent',()=>{
 test('normalizes text without executing it, retains sender and opaque delivery capability',()=>{
  const [event]=normalize(input());
  assert.equal(event.text,message.text);assert.equal(event.chatId,message.conversationId);assert.equal(event.key,message.messageId);
- assert.deepEqual(event.sender,{displayName:'David'});assert.equal(event.delivery.callbackCapability,message.callbackCapability);
+ assert.deepEqual(event.sender,{displayName:'David',id:message.senderId});assert.equal(event.delivery.callbackCapability,message.callbackCapability);
 });
 test('requires exact canonical response correlation',()=>{
  const [event]=normalize(input());

@@ -56,3 +56,5 @@ aux4 test run
 ```
 
 Tests use synthetic keys and local/injected transports, with no hosted inference.
+
+Chat sender context carries the authenticated display name and a stable opaque user ID. It grants no roles or permissions and contains no phone number or credential.
