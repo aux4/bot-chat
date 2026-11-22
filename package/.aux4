@@ -73,7 +73,7 @@
             "stdin:node ${packageDir}/lib/chat.mjs send"
           ],
           "help": {
-            "text": "Deliver canonical agent history to the chat"
+            "text": "Deliver the canonical agent reply to its conversation"
           }
         },
         {

@@ -1,6 +1,6 @@
 #### Description
 
-Deliver the canonical reply with the exact pending capability. Retry an ambiguous acknowledgement safely.
+Deliver only the canonical reply text with the exact pending capability. Retry an ambiguous acknowledgement safely.
 
 #### Usage
 

@@ -32,6 +32,6 @@ test('retries the exact callback after lost acknowledgement and refuses redirect
  const formatted={text:'Hello David',history:{messages:[]},conversationId:event.chatId,messageId:event.key};
  const result=await deliver({event,formatted,bot},false,async(url,options)=>{calls.push(options);if(calls.length===1)throw Error('local lost acknowledgement');return {ok:true,json:async()=>({accepted:true})};});
  assert.deepEqual(result,{ok:true});assert.equal(calls.length,2);assert.equal(calls[0].body,calls[1].body);assert.equal(calls[0].redirect,'error');
- assert.equal(JSON.parse(calls[0].body).reply,'Hello David');
+ assert.equal(JSON.parse(calls[0].body).reply,'Hello David');assert.equal('history' in JSON.parse(calls[0].body),false);
  await assert.rejects(()=>deliver({event:{...event,key:'other'},formatted,bot},false,async()=>{throw Error('must not send');}));
 });

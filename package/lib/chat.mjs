@@ -42,7 +42,7 @@ export function format(input) {
   const turn = JSON.parse(input.markdown);
   if (turn.version !== 1 || turn.status !== 'completed' || typeof turn.reply !== 'string' ||
       turn.conversationId !== input.event?.chatId || turn.messageId !== input.event?.key || !Array.isArray(turn.history?.messages)) throw new Error('Invalid agent turn');
-  return {text:turn.reply,history:turn.history,conversationId:turn.conversationId,messageId:turn.messageId};
+  return {text:turn.reply,conversationId:turn.conversationId,messageId:turn.messageId};
 }
 function callbackUrl(bot) {
   const url = new URL(bot.callbackUrl);
@@ -55,7 +55,7 @@ export async function deliver(input, typing = false, transport = fetch) {
   const formatted = input.formatted;
   if (!typing && (!formatted || formatted.conversationId !== event.chatId || formatted.messageId !== event.key)) throw new Error('Missing agent result');
   const body = JSON.stringify({conversationId:event.chatId,messageId:event.key,callbackCapability:event.delivery.callbackCapability,
-    status:typing ? 'processing' : 'completed',...(!typing ? {history:formatted.history,reply:formatted.text} : {})});
+    status:typing ? 'processing' : 'completed',...(!typing ? {reply:formatted.text} : {})});
   for (const delay of [0,250,750,1500]) {
     if (delay) await new Promise(resolve=>setTimeout(resolve,delay));
     try {
