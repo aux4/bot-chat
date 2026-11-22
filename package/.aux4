@@ -1,0 +1,137 @@
+{
+  "scope": "aux4",
+  "name": "bot-chat",
+  "version": "0.1.0",
+  "description": "Cloud Chat channel adapter for aux4 bot",
+  "license": "Apache-2.0",
+  "dependencies": [
+    "aux4/bot@>=0.2.15"
+  ],
+  "system": [
+    [
+      "test:node --version",
+      "brew:node",
+      "apt:nodejs"
+    ]
+  ],
+  "profiles": [
+    {
+      "name": "bot",
+      "commands": [
+        {
+          "name": "chat",
+          "execute": [
+            "profile:bot:chat"
+          ],
+          "help": {
+            "text": "Cloud Chat channel adapter"
+          }
+        }
+      ]
+    },
+    {
+      "name": "bot:chat",
+      "commands": [
+        {
+          "name": "verify",
+          "private": true,
+          "noHooks": true,
+          "execute": [
+            "stdin:node ${packageDir}/lib/chat.mjs verify"
+          ],
+          "help": {
+            "text": "Verify a signed chat delivery"
+          }
+        },
+        {
+          "name": "ingest-parse",
+          "private": true,
+          "noHooks": true,
+          "execute": [
+            "stdin:node ${packageDir}/lib/chat.mjs ingest-parse"
+          ],
+          "help": {
+            "text": "Normalize a chat message"
+          }
+        },
+        {
+          "name": "typing",
+          "private": true,
+          "noHooks": true,
+          "execute": [
+            "stdin:node ${packageDir}/lib/chat.mjs typing"
+          ],
+          "help": {
+            "text": "Keep the pending chat turn active"
+          }
+        },
+        {
+          "name": "send",
+          "private": true,
+          "noHooks": true,
+          "execute": [
+            "stdin:node ${packageDir}/lib/chat.mjs send"
+          ],
+          "help": {
+            "text": "Deliver canonical agent history to the chat"
+          }
+        },
+        {
+          "name": "download",
+          "private": true,
+          "noHooks": true,
+          "execute": [
+            "stdin:node ${packageDir}/lib/chat.mjs download"
+          ],
+          "help": {
+            "text": "Return no attachment for text-only chat"
+          }
+        },
+        {
+          "name": "format",
+          "private": true,
+          "noHooks": true,
+          "execute": [
+            "stdin:node ${packageDir}/lib/chat.mjs format"
+          ],
+          "help": {
+            "text": "Format a canonical agent turn"
+          }
+        },
+        {
+          "name": "agent",
+          "private": true,
+          "noHooks": true,
+          "execute": [
+            "stdin:node ${packageDir}/lib/chat.mjs agent values(machine, question)"
+          ],
+          "help": {
+            "text": "Run the configured generic agent and return its canonical text turn",
+            "variables": [
+              {
+                "name": "machine",
+                "text": "Configured agent machine"
+              },
+              {
+                "name": "question",
+                "text": "Message text",
+                "arg": true
+              }
+            ]
+          }
+        },
+        {
+          "name": "test-contract",
+          "private": true,
+          "noHooks": true,
+          "execute": [
+            "node --test ${packageDir}/test/chat.test.mjs"
+          ],
+          "help": {
+            "text": "Verify the chat transport with local fixtures only"
+          }
+        }
+      ]
+    }
+  ]
+}
