@@ -41,8 +41,8 @@ Signing keys and callback capabilities are never returned to the browser.
 ## Provider commands
 
 The bot core calls `aux4 bot chat verify`, `ingest-parse`, `typing`, `format`,
-`send` and `download` with JSON on stdin. `aux4 bot chat agent --machine <name>`
-is the private brain adapter. Its text argument is passed using the aux4 DSL;
+`send` and `download` with JSON on stdin. The host package owns the generic
+agent bridge, passes text as literal data, and pins the target machine;
 message text never selects a machine or becomes shell syntax.
 
 ## Local verification

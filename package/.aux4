@@ -99,28 +99,6 @@
           }
         },
         {
-          "name": "agent",
-          "private": true,
-          "noHooks": true,
-          "execute": [
-            "stdin:node ${packageDir}/lib/chat.mjs agent values(machine, question)"
-          ],
-          "help": {
-            "text": "Run the configured generic agent and return its canonical text turn",
-            "variables": [
-              {
-                "name": "machine",
-                "text": "Configured agent machine"
-              },
-              {
-                "name": "question",
-                "text": "Message text",
-                "arg": true
-              }
-            ]
-          }
-        },
-        {
           "name": "test-contract",
           "private": true,
           "noHooks": true,

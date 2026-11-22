@@ -1,5 +1,4 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
-import { spawn } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 
 const UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i;
@@ -66,33 +65,12 @@ export async function deliver(input, typing = false, transport = fetch) {
   }
   throw new Error('Chat delivery was not accepted');
 }
-export async function agentTurn(machine, question, env = process.env) {
-  if (!/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/.test(machine) || !UUID.test(env.AUX4BOT_CHAT_ID || '') || !ID.test(env.AUX4BOT_EVENT_ID || '') || !env.CLOUD_SYNC_TOKEN) throw new Error('Invalid agent dispatch context');
-  let sender = {};
-  try { const p=JSON.parse(env.AUX4BOT_SENDER || '{}');if(typeof p.displayName==='string')sender={displayName:p.displayName.slice(0,200)}; } catch {}
-  const body = {question,messageId:env.AUX4BOT_EVENT_ID,sender,responseFormat:'chat-turn'};
-  const childEnv = {...env};delete childEnv.AUX4_ACCESS_TOKEN;
-  return new Promise((resolve,reject)=>{
-    const child=spawn('aux4',['cloud',machine,'ask','--conversationId',env.AUX4BOT_CHAT_ID],{env:childEnv,stdio:['pipe','pipe','ignore']});
-    let output='';child.stdout.on('data',chunk=>{output+=chunk;if(Buffer.byteLength(output)>262144)child.kill();});
-    child.once('error',()=>reject(new Error('Agent dispatch failed')));
-    child.once('close',code=>{
-      try {
-        if(code!==0)throw new Error();
-        let result=JSON.parse(output);if(typeof result.output==='string')result=JSON.parse(result.output);
-        if(result.status!=='completed' || result.conversationId!==env.AUX4BOT_CHAT_ID || result.messageId!==env.AUX4BOT_EVENT_ID)throw new Error();
-        resolve(JSON.stringify(result));
-      } catch { reject(new Error('Agent did not return a completed chat turn')); }
-    });
-    child.stdin.on('error',()=>{});child.stdin.end(JSON.stringify(body));
-  });
-}
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   try {
-    const action=process.argv[2];let raw='';if(action==='agent')process.stdin.resume();
-    if(action!=='agent')for await(const chunk of process.stdin){raw+=chunk;if(Buffer.byteLength(raw)>524288)throw new Error();}
-    const input=action==='agent'?{}:JSON.parse(raw || '{}');
-    const result=action==='verify'?verify(input):action==='ingest-parse'?normalize(input):action==='format'?format(input):action==='typing'?await deliver(input,true):action==='send'?await deliver(input):action==='download'?{path:null}:action==='agent'?await agentTurn(process.argv[3],process.argv[4] || ''):null;
+    const action=process.argv[2];let raw='';
+    for await(const chunk of process.stdin){raw+=chunk;if(Buffer.byteLength(raw)>524288)throw new Error();}
+    const input=JSON.parse(raw || '{}');
+    const result=action==='verify'?verify(input):action==='ingest-parse'?normalize(input):action==='format'?format(input):action==='typing'?await deliver(input,true):action==='send'?await deliver(input):action==='download'?{path:null}:null;
     if(result===null)throw new Error();process.stdout.write(typeof result==='string'?result:JSON.stringify(result));
   } catch {process.stderr.write('Chat adapter command failed\n');process.exitCode=1;}
 }
