@@ -4,11 +4,12 @@ import {signature,verify,normalize,format,deliver} from '../lib/chat.mjs';
 const secret='local-test-key-'.repeat(4);
 const bot={signingSecret:secret,agentMachine:'agent-pete',callbackUrl:'http://127.0.0.1/callback'};
 const message={version:1,conversationId:'123e4567-e89b-42d3-a456-426614174000',messageId:'message-1',text:'$(id) --machine attacker',senderId:'a'.repeat(64),senderName:'David',agent:'agent-pete',callbackCapability:'b'.repeat(64),sentAt:new Date().toISOString()};
-const input=(m=message)=>{const rawBody=JSON.stringify(m);return {method:'POST',rawBody,headers:{'X-Aux4-Chat-Signature':signature(rawBody,secret)},bot};};
+const input=(m=message)=>{const rawBody=JSON.stringify(m);const timestamp=String(Math.floor(Date.parse(m.sentAt)/1000));return {method:'POST',rawBody,headers:{'X-Aux4-Chat-Signature':signature(rawBody,secret,timestamp),'X-Aux4-Chat-Timestamp':timestamp},bot};};
 test('authenticates exact bytes, time window and fixed agent',()=>{
  assert.deepEqual(verify(input()),{valid:true});
  assert.equal(verify({...input(),rawBody:input().rawBody+' '}).valid,false);
  assert.equal(verify({...input(),headers:{}}).valid,false);
+ assert.equal(verify({...input(),headers:{...input().headers,'X-Aux4-Chat-Timestamp':'1'}}).valid,false);
  assert.equal(verify(input({...message,sentAt:new Date(Date.now()-300001).toISOString()})).valid,false);
  assert.equal(verify(input({...message,agent:'attacker'})).valid,false);
  assert.equal(verify(input({...message,attachments:[{id:'x'}]})).valid,false);

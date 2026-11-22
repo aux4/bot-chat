@@ -17,7 +17,9 @@ The cloud host package installs this dependency automatically.
 Cloud Chat exposes the configured bot in People, alongside other participants.
 Open a DM or add it to a channel. The server signs the message with a dedicated
 connection key, then posts it to an asynchronous platform webhook bound to
-`cloud-bot chat`. The webhook and this adapter both validate the signature.
+`cloud-bot chat`. The webhook and this adapter both validate the signature and five-minute replay window.
+`X-Aux4-Chat-Timestamp` carries Unix seconds; `X-Aux4-Chat-Signature` is
+`sha256=` followed by the hex HMAC-SHA256 of `<timestamp>.<exact raw body>`.
 The queue and bot state remain in the bot machine's `db: cloud` repository.
 
 Configure the Chat server with `CHAT_BOT_AGENT`, `CHAT_BOT_NAME`,

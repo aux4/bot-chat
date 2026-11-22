@@ -4,8 +4,8 @@ import { pathToFileURL } from 'node:url';
 const UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i;
 const ID = /^[A-Za-z0-9._:-]{1,128}$/;
 const CAP = /^[A-Za-z0-9_-]{32,128}$/;
-export function signature(rawBody, secret) {
-  return 'sha256=' + createHmac('sha256', secret).update(rawBody).digest('hex');
+export function signature(rawBody, secret, timestamp) {
+  return 'sha256=' + createHmac('sha256', secret).update(`${timestamp}.${rawBody}`).digest('hex');
 }
 export function parseMessage(rawBody, bot = {}) {
   const message = JSON.parse(rawBody);
@@ -23,12 +23,14 @@ export function verify(input, now = Date.now()) {
     if (input.method && input.method.toUpperCase() !== 'POST') return {valid:false,statusCode:405};
     if (typeof raw !== 'string' || Buffer.byteLength(raw) > 65536 || typeof secret !== 'string' || secret.length < 32) return {valid:false,statusCode:401};
     const headers = Object.fromEntries(Object.entries(input.headers || {}).map(([k,v])=>[k.toLowerCase(),v]));
+    const signedTime = String(headers['x-aux4-chat-timestamp'] || '');
+    if (!/^[0-9]{10,11}$/.test(signedTime) || Math.abs(now-Number(signedTime)*1000)>300000) return {valid:false,statusCode:401};
     const supplied = String(headers['x-aux4-chat-signature'] || '');
-    const expected = signature(raw, secret);
+    const expected = signature(raw, secret, signedTime);
     if (supplied.length !== expected.length || !timingSafeEqual(Buffer.from(supplied),Buffer.from(expected))) return {valid:false,statusCode:401};
     const message = parseMessage(raw,input.bot);
     const timestamp = Date.parse(message.sentAt);
-    if (!Number.isFinite(timestamp) || Math.abs(now-timestamp)>300000) return {valid:false,statusCode:401};
+    if (!Number.isFinite(timestamp) || Math.floor(timestamp/1000)!==Number(signedTime) || Math.abs(now-timestamp)>300000) return {valid:false,statusCode:401};
     return {valid:true};
   } catch { return {valid:false,statusCode:400}; }
 }
