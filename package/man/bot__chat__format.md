@@ -1,6 +1,9 @@
 #### Description
 
 Validate the structured agent response and require matching conversation and message identifiers.
+For a completed turn, forward only artifacts attached to the assistant history
+message with an exact matching `replyTo`; at most 8 artifacts and 128 KiB are
+accepted. Failed turns become a bounded generic retry message.
 
 #### Usage
 

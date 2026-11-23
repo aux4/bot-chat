@@ -35,6 +35,13 @@ Agent history remains on the agent VM. Chat stores received messages in its
 existing membership-protected room store. Different rooms have different agent
 conversation IDs; the same room continues its history.
 
+Completed turns forward only the `artifacts` array on the assistant history
+message whose `replyTo` exactly matches the current message ID. The adapter
+forwards at most eight artifacts and 128 KiB of JSON; it preserves the canonical
+public envelope for Chat's transcript sanitizer. Artifacts from prior or other
+turns are ignored. Failed turns deliver a bounded generic retry message with the
+same exact-turn capability.
+
 Completion requires the exact pending turn's callback capability. Only a digest
 is stored by Chat. Retrying a delivery cannot create a second message, and a
 member removed before completion cannot cause a new bot reply to be appended.

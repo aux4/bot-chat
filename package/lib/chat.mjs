@@ -4,6 +4,16 @@ import { pathToFileURL } from 'node:url';
 const UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i;
 const ID = /^[A-Za-z0-9._:-]{1,128}$/;
 const CAP = /^[A-Za-z0-9_-]{32,128}$/;
+const MAX_ARTIFACTS = 8;
+const MAX_ARTIFACT_BYTES = 128 * 1024;
+const FAILED_REPLY = 'The agent could not complete this request. Please try again.';
+function boundedArtifacts(artifacts) {
+  if (!Array.isArray(artifacts) || artifacts.length > MAX_ARTIFACTS || artifacts.some(artifact => !artifact || typeof artifact !== 'object' || Array.isArray(artifact))) throw new Error('Invalid agent artifacts');
+  let encoded;
+  try { encoded = JSON.stringify(artifacts); } catch { throw new Error('Invalid agent artifacts'); }
+  if (Buffer.byteLength(encoded, 'utf8') > MAX_ARTIFACT_BYTES) throw new Error('Invalid agent artifacts');
+  return JSON.parse(encoded);
+}
 export function signature(rawBody, secret, timestamp) {
   return 'sha256=' + createHmac('sha256', secret).update(`${timestamp}.${rawBody}`).digest('hex');
 }
@@ -42,9 +52,19 @@ export function normalize(input) {
 }
 export function format(input) {
   const turn = JSON.parse(input.markdown);
-  if (turn.version !== 1 || turn.status !== 'completed' || typeof turn.reply !== 'string' ||
+  if (turn.version !== 1 || !['completed','failed'].includes(turn.status) ||
       turn.conversationId !== input.event?.chatId || turn.messageId !== input.event?.key || !Array.isArray(turn.history?.messages)) throw new Error('Invalid agent turn');
-  return {text:turn.reply,conversationId:turn.conversationId,messageId:turn.messageId};
+  if (turn.status === 'completed' && typeof turn.reply !== 'string') throw new Error('Invalid agent turn');
+  if (turn.status === 'failed' && turn.reply !== undefined && typeof turn.reply !== 'string') throw new Error('Invalid agent turn');
+  const reply = turn.status === 'failed' ? FAILED_REPLY : turn.reply;
+  const matching = turn.history.messages.filter(message => message?.role === 'assistant' && message.replyTo === turn.messageId);
+  const artifacts = matching.flatMap(message => {
+    if (message.artifacts === undefined) return [];
+    if (!Array.isArray(message.artifacts)) throw new Error('Invalid agent artifacts');
+    return message.artifacts;
+  });
+  const bounded = boundedArtifacts(artifacts);
+  return {text:reply,status:turn.status,conversationId:turn.conversationId,messageId:turn.messageId,...(bounded.length ? {artifacts:bounded} : {})};
 }
 function callbackUrl(bot) {
   const url = new URL(bot.callbackUrl);
@@ -56,8 +76,10 @@ export async function deliver(input, typing = false, transport = fetch) {
   if (!UUID.test(event?.chatId || '') || !ID.test(event?.key || '') || !CAP.test(event?.delivery?.callbackCapability || '')) throw new Error('Missing chat delivery context');
   const formatted = input.formatted;
   if (!typing && (!formatted || formatted.conversationId !== event.chatId || formatted.messageId !== event.key)) throw new Error('Missing agent result');
+  if (!typing && !['completed','failed'].includes(formatted.status || 'completed')) throw new Error('Invalid agent result');
+  const artifacts = !typing && formatted.artifacts !== undefined ? boundedArtifacts(formatted.artifacts) : [];
   const body = JSON.stringify({conversationId:event.chatId,messageId:event.key,callbackCapability:event.delivery.callbackCapability,
-    status:typing ? 'processing' : 'completed',...(!typing ? {reply:formatted.text} : {})});
+    status:typing ? 'processing' : (formatted.status || 'completed'),...(!typing ? {reply:formatted.text,...(artifacts.length ? {artifacts} : {})} : {})});
   for (const delay of [0,250,750,1500]) {
     if (delay) await new Promise(resolve=>setTimeout(resolve,delay));
     try {
